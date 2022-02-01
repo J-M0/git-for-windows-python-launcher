@@ -1,0 +1,11 @@
+pkgbase = pylauncher
+	pkgver = 3.10.2
+	pkgrel = 1
+	arch = x86
+	arch = x86_64
+	license = GPL
+	makedepends = quilt
+	source = https://raw.githubusercontent.com/python/cpython/v3.10.2/PC/launcher.c
+	sha256sums = 89723bd559837fbfa4bde5477aa5fc66b8b5adafdba6bd741178910396df19f3
+
+pkgname = pylauncher

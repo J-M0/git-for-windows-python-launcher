@@ -1,0 +1,38 @@
+Index: git-for-windows-python-launcher/src/launcher.c
+===================================================================
+--- git-for-windows-python-launcher.orig/src/launcher.c
++++ git-for-windows-python-launcher/src/launcher.c
+@@ -942,18 +942,24 @@ static COMMAND * find_on_path(wchar_t *
+     }
+     else {
+         /* No extension - search using registered extensions. */
+-        rc = _wdupenv_s(&pathext, &varsize, L"PATHEXT");
++        rc = _wgetenv_s(&varsize, NULL, 0, L"PATHEXT");
+         if (rc == 0) {
+-            extension = wcstok_s(pathext, L";", &context);
+-            while (extension) {
+-                len = SearchPathW(NULL, name, extension, MSGSIZE, path_command.value, NULL);
+-                if (len) {
+-                    result = &path_command;
+-                    break;
++            pathext = (wchar_t*) malloc(varsize * sizeof(wchar_t));
++            if (pathext != NULL) {
++                rc = _wgetenv_s(&varsize, pathext, varsize, L"PATHEXT");
++                if (rc == 0) {
++                    extension = wcstok_s(pathext, L";", &context);
++                    while (extension) {
++                        len = SearchPathW(NULL, name, extension, MSGSIZE, path_command.value, NULL);
++                        if (len) {
++                            result = &path_command;
++                            break;
++                        }
++                        extension = wcstok_s(NULL, L";", &context);
++                    }
++                    free(pathext);
+                 }
+-                extension = wcstok_s(NULL, L";", &context);
+             }
+-            free(pathext);
+         }
+     }
+     return result;
