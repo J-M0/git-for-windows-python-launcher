@@ -1,0 +1,97 @@
+Index: src/launcher.c
+===================================================================
+--- src.orig/launcher.c
++++ src/launcher.c
+@@ -465,40 +465,40 @@ locate_store_pythons()
+ #endif
+ }
+ 
+-static void
+-locate_venv_python()
+-{
+-    static wchar_t venv_python[MAX_PATH];
+-    INSTALLED_PYTHON * ip;
+-    wchar_t *virtual_env = get_env(L"VIRTUAL_ENV");
+-    DWORD attrs;
+-
+-    /* Check for VIRTUAL_ENV environment variable */
+-    if (virtual_env == NULL || virtual_env[0] == L'\0') {
+-        return;
+-    }
+-
+-    /* Check for a python executable in the venv */
+-    debug(L"Checking for Python executable in virtual env '%ls'\n", virtual_env);
+-    _snwprintf_s(venv_python, MAX_PATH, _TRUNCATE,
+-            L"%ls\\Scripts\\%ls", virtual_env, PYTHON_EXECUTABLE);
+-    attrs = GetFileAttributesW(venv_python);
+-    if (attrs == INVALID_FILE_ATTRIBUTES) {
+-        debug(L"Python executable %ls missing from virtual env\n", venv_python);
+-        return;
+-    }
+-
+-    ip = &installed_pythons[num_installed_pythons++];
+-    wcscpy_s(ip->executable, MAX_PATH, venv_python);
+-    ip->bits = 0;
+-    wcscpy_s(ip->version, MAX_VERSION_SIZE, L"venv");
+-}
++// static void
++// locate_venv_python()
++// {
++//     static wchar_t venv_python[MAX_PATH];
++//     INSTALLED_PYTHON * ip;
++//     wchar_t *virtual_env = get_env(L"VIRTUAL_ENV");
++//     DWORD attrs;
++
++//     /* Check for VIRTUAL_ENV environment variable */
++//     if (virtual_env == NULL || virtual_env[0] == L'\0') {
++//         return;
++//     }
++
++//     /* Check for a python executable in the venv */
++//     debug(L"Checking for Python executable in virtual env '%ls'\n", virtual_env);
++//     _snwprintf_s(venv_python, MAX_PATH, _TRUNCATE,
++//             L"%ls\\Scripts\\%ls", virtual_env, PYTHON_EXECUTABLE);
++//     attrs = GetFileAttributesW(venv_python);
++//     if (attrs == INVALID_FILE_ATTRIBUTES) {
++//         debug(L"Python executable %ls missing from virtual env\n", venv_python);
++//         return;
++//     }
++
++//     ip = &installed_pythons[num_installed_pythons++];
++//     wcscpy_s(ip->executable, MAX_PATH, venv_python);
++//     ip->bits = 0;
++//     wcscpy_s(ip->version, MAX_VERSION_SIZE, L"venv");
++// }
+ 
+ static void
+ locate_all_pythons()
+ {
+-    /* venv Python is highest priority */
+-    locate_venv_python();
++    /* we do not want to use venv Pythons */
++    // locate_venv_python();
+ #if defined(_M_X64)
+     /* If we are a 64bit process, first hit the 32bit keys. */
+     debug(L"locating Pythons in 32bit registry\n");
+@@ -935,8 +935,10 @@ static COMMAND * find_on_path(wchar_t *
+     wcscpy_s(path_command.key, MAX_PATH, name);
+     if (wcschr(name, L'.') != NULL) {
+         /* assume it has an extension. */
++        debug(L"find_on_path: searching for %ls\n", name);
+         len = SearchPathW(NULL, name, NULL, MSGSIZE, path_command.value, NULL);
+         if (len) {
++            debug(L"find_on_path: found %ls\n", path_command.value);
+             result = &path_command;
+         }
+     }
+@@ -950,8 +952,10 @@ static COMMAND * find_on_path(wchar_t *
+                 if (rc == 0) {
+                     extension = wcstok_s(pathext, L";", &context);
+                     while (extension) {
++                        debug(L"find_on_path: searching for %ls.%ls\n", name, extension);
+                         len = SearchPathW(NULL, name, extension, MSGSIZE, path_command.value, NULL);
+                         if (len) {
++                            debug(L"find_on_path: found %ls\n", path_command.value);
+                             result = &path_command;
+                             break;
+                         }
