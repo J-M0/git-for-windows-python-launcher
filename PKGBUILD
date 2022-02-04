@@ -30,6 +30,8 @@ sha256sums=('89723bd559837fbfa4bde5477aa5fc66b8b5adafdba6bd741178910396df19f3')
 validpgpkeys=()
 
 prepare() {
+	cd "$srcdir"
+	ln -s ../patches
 	quilt push
 }
 

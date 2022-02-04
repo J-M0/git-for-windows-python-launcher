@@ -1,7 +1,7 @@
-Index: git-for-windows-python-launcher/src/launcher.c
+Index: src/launcher.c
 ===================================================================
---- git-for-windows-python-launcher.orig/src/launcher.c
-+++ git-for-windows-python-launcher/src/launcher.c
+--- src.orig/launcher.c
++++ src/launcher.c
 @@ -942,18 +942,24 @@ static COMMAND * find_on_path(wchar_t *
      }
      else {
