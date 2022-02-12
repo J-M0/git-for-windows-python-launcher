@@ -1,0 +1,128 @@
+Index: src/launcher.c
+===================================================================
+--- src.orig/launcher.c
++++ src/launcher.c
+@@ -9,9 +9,11 @@
+  */
+ 
+ #include <windows.h>
++#include <shlwapi.h>
+ #include <shlobj.h>
+ #include <stdio.h>
+ #include <tchar.h>
++#include <iso646.h>
+ 
+ #define BUFSIZE 256
+ #define MSGSIZE 1024
+@@ -54,6 +56,8 @@
+ 
+ static FILE * log_fp = NULL;
+ 
++static wchar_t * argv0;
++
+ static wchar_t *
+ skip_whitespace(wchar_t * p)
+ {
+@@ -944,11 +948,27 @@ static errno_t my_wdupenv_s(wchar_t **bu
+     return rc;
+ }
+ 
++static BOOL PathHasSamePrefixW(LPCWSTR path1, LPCWSTR path2) {
++    wchar_t prefix[_MAX_PATH];
++    wchar_t drive[_MAX_DRIVE];
++    wchar_t dir[_MAX_DIR];
++
++    _wsplitpath_s(path1, drive, _MAX_DRIVE, dir, _MAX_DIR, NULL, 0, NULL, 0);
++    _wmakepath_s(prefix, _MAX_PATH, drive, dir, NULL, NULL);
++    PathRemoveBackslashW(prefix);
++
++    return PathIsPrefixW(prefix, path2);
++}
++
+ static COMMAND path_command;
+ 
+ static COMMAND * find_on_path(wchar_t * name)
+ {
++    wchar_t * pathvar;
++    wchar_t * pathcontext = NULL;
++    wchar_t * path;
+     wchar_t * pathext;
++    wchar_t * pathext_copy;
+     size_t    varsize;
+     wchar_t * context = NULL;
+     wchar_t * extension;
+@@ -956,32 +976,52 @@ static COMMAND * find_on_path(wchar_t *
+     DWORD     len;
+     errno_t   rc;
+ 
++    rc = my_wdupenv_s(&pathvar, &varsize, L"PATH");
++
++    // if (rc != 0) {
++    //     return result;
++    // }
++
++    path = wcstok_s(pathvar, L";", &pathcontext);
++
+     wcscpy_s(path_command.key, MAX_PATH, name);
+     if (wcschr(name, L'.') != NULL) {
+         /* assume it has an extension. */
+         debug(L"find_on_path: searching for %ls\n", name);
+-        len = SearchPathW(NULL, name, NULL, MSGSIZE, path_command.value, NULL);
+-        if (len) {
+-            debug(L"find_on_path: found %ls\n", path_command.value);
+-            result = &path_command;
++        while (path) {
++            len = SearchPathW(path, name, NULL, MSGSIZE, path_command.value, NULL);
++            if (len and not PathHasSamePrefixW(argv0, path_command.value)) {
++                debug(L"find_on_path: found %ls\n", path_command.value);
++                result = &path_command;
++                break;
++            }
++            path = wcstok_s(NULL, L";", &pathcontext);
+         }
++        free(pathvar);
+     }
+     else {
+         /* No extension - search using registered extensions. */
+         rc = my_wdupenv_s(&pathext, &varsize, L"PATHEXT");
+         if (rc == 0) {
+-            extension = wcstok_s(pathext, L";", &context);
+-            while (extension) {
+-                debug(L"find_on_path: searching for %ls.%ls\n", name, extension);
+-                len = SearchPathW(NULL, name, extension, MSGSIZE, path_command.value, NULL);
+-                if (len) {
+-                    debug(L"find_on_path: found %ls\n", path_command.value);
+-                    result = &path_command;
+-                    break;
++            pathext_copy = (wchar_t*) malloc(varsize * sizeof(wchar_t));
++            while (path) {
++                wcscpy_s(pathext_copy, varsize, pathext);
++                extension = wcstok_s(pathext_copy, L";", &context);
++                while (extension) {
++                    debug(L"find_on_path: searching for %ls.%ls\n", name, extension);
++                    len = SearchPathW(path, name, extension, MSGSIZE, path_command.value, NULL);
++                    if (len) {
++                        debug(L"find_on_path: found %ls\n", path_command.value);
++                        result = &path_command;
++                        break;
++                    }
++                    extension = wcstok_s(NULL, L";", &context);
+                 }
+-                extension = wcstok_s(NULL, L";", &context);
++                path = wcstok_s(NULL, L";", &pathcontext);
++                wcscpy_s(pathext_copy, varsize, pathext);
+             }
+             free(pathext);
++            free(pathext_copy);
+         }
+     }
+     return result;
+@@ -1745,7 +1785,7 @@ process(int argc, wchar_t ** argv)
+     wchar_t * command;
+     wchar_t * executable;
+     wchar_t * p;
+-    wchar_t * argv0;
++    // wchar_t * argv0;
+     int rc = 0;
+     INSTALLED_PYTHON * ip;
+     BOOL valid;
