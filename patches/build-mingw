@@ -2,37 +2,43 @@ Index: src/launcher.c
 ===================================================================
 --- src.orig/launcher.c
 +++ src/launcher.c
-@@ -942,18 +942,24 @@ static COMMAND * find_on_path(wchar_t *
+@@ -920,6 +920,30 @@ static wchar_t * skip_prefix(wchar_t * n
+ 
+ #if defined(SEARCH_PATH)
+ 
++static errno_t my_wdupenv_s(wchar_t **buffer, size_t *numberOfElements, const wchar_t *varname) {
++    errno_t rc;
++
++    rc = _wgetenv_s(numberOfElements, NULL, 0, varname);
++
++    if (rc != 0) {
++        return rc;
++    } else if (*numberOfElements == 0) {
++        *buffer = NULL;
++        return 0;
++    }
++
++    *buffer = (wchar_t*) malloc(*numberOfElements * sizeof(wchar_t));
++
++    if (*buffer == NULL) {
++        *numberOfElements = 0;
++        return ENOMEM;
++    }
++
++    rc = _wgetenv_s(numberOfElements, *buffer, *numberOfElements, varname);
++
++    return rc;
++}
++
+ static COMMAND path_command;
+ 
+ static COMMAND * find_on_path(wchar_t * name)
+@@ -942,7 +966,7 @@ static COMMAND * find_on_path(wchar_t *
      }
      else {
          /* No extension - search using registered extensions. */
 -        rc = _wdupenv_s(&pathext, &varsize, L"PATHEXT");
-+        rc = _wgetenv_s(&varsize, NULL, 0, L"PATHEXT");
++        rc = my_wdupenv_s(&pathext, &varsize, L"PATHEXT");
          if (rc == 0) {
--            extension = wcstok_s(pathext, L";", &context);
--            while (extension) {
--                len = SearchPathW(NULL, name, extension, MSGSIZE, path_command.value, NULL);
--                if (len) {
--                    result = &path_command;
--                    break;
-+            pathext = (wchar_t*) malloc(varsize * sizeof(wchar_t));
-+            if (pathext != NULL) {
-+                rc = _wgetenv_s(&varsize, pathext, varsize, L"PATHEXT");
-+                if (rc == 0) {
-+                    extension = wcstok_s(pathext, L";", &context);
-+                    while (extension) {
-+                        len = SearchPathW(NULL, name, extension, MSGSIZE, path_command.value, NULL);
-+                        if (len) {
-+                            result = &path_command;
-+                            break;
-+                        }
-+                        extension = wcstok_s(NULL, L";", &context);
-+                    }
-+                    free(pathext);
-                 }
--                extension = wcstok_s(NULL, L";", &context);
-             }
--            free(pathext);
-         }
-     }
-     return result;
+             extension = wcstok_s(pathext, L";", &context);
+             while (extension) {

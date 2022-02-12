@@ -73,7 +73,7 @@ Index: src/launcher.c
  #if defined(_M_X64)
      /* If we are a 64bit process, first hit the 32bit keys. */
      debug(L"locating Pythons in 32bit registry\n");
-@@ -935,8 +935,10 @@ static COMMAND * find_on_path(wchar_t *
+@@ -959,8 +959,10 @@ static COMMAND * find_on_path(wchar_t *
      wcscpy_s(path_command.key, MAX_PATH, name);
      if (wcschr(name, L'.') != NULL) {
          /* assume it has an extension. */
@@ -84,14 +84,14 @@ Index: src/launcher.c
              result = &path_command;
          }
      }
-@@ -950,8 +952,10 @@ static COMMAND * find_on_path(wchar_t *
-                 if (rc == 0) {
-                     extension = wcstok_s(pathext, L";", &context);
-                     while (extension) {
-+                        debug(L"find_on_path: searching for %ls.%ls\n", name, extension);
-                         len = SearchPathW(NULL, name, extension, MSGSIZE, path_command.value, NULL);
-                         if (len) {
-+                            debug(L"find_on_path: found %ls\n", path_command.value);
-                             result = &path_command;
-                             break;
-                         }
+@@ -970,8 +972,10 @@ static COMMAND * find_on_path(wchar_t *
+         if (rc == 0) {
+             extension = wcstok_s(pathext, L";", &context);
+             while (extension) {
++                debug(L"find_on_path: searching for %ls.%ls\n", name, extension);
+                 len = SearchPathW(NULL, name, extension, MSGSIZE, path_command.value, NULL);
+                 if (len) {
++                    debug(L"find_on_path: found %ls\n", path_command.value);
+                     result = &path_command;
+                     break;
+                 }
