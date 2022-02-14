@@ -32,7 +32,7 @@ validpgpkeys=()
 prepare() {
 	cd "$srcdir"
 	ln -s ../patches
-	quilt push
+	quilt push -a
 }
 
 build() {
@@ -41,7 +41,7 @@ build() {
     if [[ $CARCH = x86_64 ]]; then
         defines="-D_M_X64 $defines"
     fi
-	gcc -municode $defines -o python launcher.c -lversion
+	gcc -municode $defines -o python launcher.c -lversion -lshlwapi
 }
 
 # check() {
