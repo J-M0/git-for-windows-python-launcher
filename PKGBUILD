@@ -4,17 +4,19 @@
 # then please put 'unknown'.
 
 # Maintainer: Your Name <youremail@domain.com>
-pkgname=pylauncher
+_realname=pylauncher
+pkgname=mingw-w64-${_realname}
 pkgver=3.10.2
 pkgrel=1
 epoch=
 pkgdesc=""
-arch=(i686 x86_64)
+arch=('any')
+mingw_arch=('mingw32' 'mingw64')
 url=""
 license=('PSF')
 groups=()
 depends=()
-makedepends=(quilt)
+makedepends=("${MINGW_PACKAGE_PREFIX}-gcc" 'quilt')
 checkdepends=()
 optdepends=()
 provides=('python' 'python2' 'python3')
