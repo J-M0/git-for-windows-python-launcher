@@ -1,4 +1,3 @@
 build-mingw
 disable-venv
-disable-run-child
 prevent-self-call
