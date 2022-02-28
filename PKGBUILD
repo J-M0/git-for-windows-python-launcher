@@ -54,4 +54,6 @@ build() {
 package() {
 	cd "$srcdir"
 	install -Dm 0755 python.exe "$pkgdir/usr/bin/python.exe"
+	install -Dm 0755 python.exe "$pkgdir/usr/bin/python2.exe"
+	install -Dm 0755 python.exe "$pkgdir/usr/bin/python3.exe"
 }
